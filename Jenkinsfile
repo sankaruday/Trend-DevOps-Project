@@ -38,10 +38,18 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 script {
-                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
-                    sh "kubectl apply -f deployment.yaml"
+                    // This pulls the keys you saved in Jenkins Manage Credentials
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh """
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws eks update-kubeconfig --region ap-south-1 --name trend-eks-cluster
+                        kubectl apply -f k8s/
+                        """
+                    }
                 }
             }
         }
-    }
-}
