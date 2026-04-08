@@ -1,91 +1,73 @@
-DevOps Practice Project – Dist Directory
 
-This repository contains the production-ready build files (dist folder) for DevOps practice and deployment exercises.
+Project Documentation: Trendify DevOps Pipeline
 
-It is intentionally structured to help learners focus on CI/CD pipelines, hosting, containerization, and infrastructure setup rather than application development.
+1. Pipeline Explanation
+The CI/CD pipeline is designed to automate the journey from code commit to a live, monitored production environment on AWS EKS.
 
-📁 What This Repository Contains
+Stage 1: Checkout Code –  pulls the latest source code from the GitHub repository.
 
-dist/ – Compiled and production-ready static files
+Stage 2: Build Docker Image – A production Docker image is created using the Dockerfile. It uses nginx:stable-alpine to serve the React application efficiently.
 
-HTML
+Stage 3: Push to Docker Hub – The built image is tagged and pushed to the Docker Hub registry (uday2097/trend) using Jenkins credentials.
 
-CSS
+Stage 4: Deploy to EKS – Jenkins authenticates with AWS, updates the kubeconfig, and applies the Kubernetes manifests (deployment.yaml). This stage creates the LoadBalancer that provides the public URL.
 
-JavaScript
+Setup Instructions
 
-Assets (images, fonts, etc.)
+Prerequisites
 
-These files are ready to deploy to:
+AWS CLI & kubectl installed on  management server.
 
-Web servers (Nginx / Apache)
+eksctl installed for cluster scaling and management.
 
-Cloud platforms (AWS S3, Azure Blob, GCP Storage)
+Helm installed for the monitoring stack.
 
-Containerized environments (Docker + Nginx)
+Jenkins with Docker and Pipeline plugins.
 
-Kubernetes clusters
+Step 1: Infrastructure Setup (EKS)
+Create the cluster using eksctl. Note that for monitoring, we scaled the cluster to 2 nodes to accommodate the Prometheus stack.
 
-CI/CD pipeline demonstrations
+eksctl create cluster --name trend-eks-cluster --region ap-south-1 --nodegroup-name standard-nodes --nodes 2 --instance-types t3.small
 
-🎯 Purpose of This Repository
+Step 2: Jenkins Configuration
 
-This repository is designed for:
+Credentials: Add the following credentials in Jenkins:
 
-DevOps beginners
+docker-hub-creds: Username/Password for Docker Hub.
 
-CI/CD practice
+aws-access-key: AWS Access Key ID (Secret text).
 
-Deployment pipeline testing
+aws-secret-key: AWS Secret Access Key (Secret text).
 
-Docker & Kubernetes deployment exercises
+Pipeline: Create a "Pipeline" job and point it to your GitHub repository URL.
 
-Web server configuration practice
+Step 3: Application Deployment
 
-Reverse proxy and load balancer setup
+Run the Jenkins pipeline. This will deploy the application. To find your live URL, run:
 
-The goal is to simulate real-world deployment scenarios using already built application files.
 
-❓ Why is there NO package.json?
+kubectl get svc
+Use the EXTERNAL-IP (LoadBalancer DNS) to view the Trendify website.
 
-You may notice that this repository does not include:
+Step 4: Monitoring Setup (Prometheus & Grafana)
+Add the Helm repository:
 
-package.json
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 
-node_modules
+Install the stack:
 
-Source code (src/)
+kubectl create namespace monitoring
+helm install monitoring-stack prometheus-community/kube-prometheus-stack --namespace monitoring
+Access Grafana via LoadBalancer:
 
-Build tools configuration
 
-✅ Reason:
+kubectl edit svc monitoring-stack-grafana -n monitoring 
 
-This repository only contains the final production build output (dist), not the development source code.
 
-In a typical project:
+Deployment Artifacts
+Application URL: aab6f920fe87a4cd88312c16b6c77c4b-360898684.ap-south-1.elb.amazonaws.com
 
-Developers write source code.
+Monitoring URL: a69cac10a0c7b4fcb91ea3414c016943-328888065.ap-south-1.elb.amazonaws.com
 
-The project is built using tools like:
-
-Node.js
-
-Webpack
-
-Vite
-
-React (or other frameworks)
-
-A dist/ folder is generated.
-
-Only the production build is deployed to servers.
-
-This repository represents step 4 only.
-
-Since this is already the compiled output:
-
-No dependencies are required
-
-No build process is required
-
-No package.json is needed
+Docker Image: uday2097/trend:latest
